@@ -1,26 +1,30 @@
 <?php
+
 namespace Tualo\Office\GraphQL\Routes;
+
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\Type;
 use GraphQL\Type\Schema;
 use GraphQL\GraphQL;
 
 use Tualo\Office\Basic\TualoApplication;
-use Tualo\Office\Basic\Route As R;
+use Tualo\Office\Basic\Route as R;
 use Tualo\Office\Basic\IRoute;
 
 
-class Route implements IRoute{
-    public static function register(){
+class Route extends \Tualo\Office\Basic\RouteWrapper
+{
+    public static function register()
+    {
 
-        R::add('/graphql/definition',function($matches){
+        R::add('/graphql/definition', function ($matches) {
             $list_tables_sql = 'select table_name from ds where existsreal=1 and title<>"" and table_name="test" ';
 
             try {
                 $db = TualoApplication::get('session')->db;
-                $list_tables=$db->direct($list_tables_sql);
+                $list_tables = $db->direct($list_tables_sql);
 
-                foreach($list_tables as $list_table){
+                foreach ($list_tables as $list_table) {
                     $userType = new ObjectType([
                         'name' => 'User',
                         'fields' => [
@@ -30,14 +34,13 @@ class Route implements IRoute{
                         ]
                     ]);
                 }
-                
-            }catch(\Exception $e){
+            } catch (\Exception $e) {
                 TualoApplication::result('msg', $e->getMessage());
             }
         });
-            
-        R::add('/graphql/ep',function($matches){
-            
+
+        R::add('/graphql/ep', function ($matches) {
+
 
             $queryType = new ObjectType([
                 'name' => 'Query',
@@ -47,7 +50,7 @@ class Route implements IRoute{
                         'args' => [
                             'message' => Type::nonNull(Type::string()),
                         ],
-                        'resolve' => fn ($rootValue, array $args): string => $rootValue['prefix'] . $args['message'],
+                        'resolve' => fn($rootValue, array $args): string => $rootValue['prefix'] . $args['message'],
                     ],
                 ],
             ]);
@@ -55,7 +58,7 @@ class Route implements IRoute{
             $schema = new Schema([
                 'query' => $queryType
             ]);
-            
+
 
             $rawInput = file_get_contents('php://input');
             $input = json_decode($rawInput, true);
@@ -78,8 +81,6 @@ class Route implements IRoute{
             header('Content-Type: application/json');
             echo json_encode($output, JSON_THROW_ON_ERROR);
             exit();
-
-        },['get','post'],true);
-
+        }, ['get', 'post'], true);
     }
 }
